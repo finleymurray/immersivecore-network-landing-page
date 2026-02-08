@@ -1,4 +1,4 @@
-/* Basic Reset */
+/* RESET */
 * {
     margin: 0;
     padding: 0;
@@ -8,103 +8,129 @@
 body {
     background-color: #000000;
     color: #ffffff;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    min-height: 100vh; /* Changed from height to min-height for scrolling */
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
-    text-align: center;
-    padding: 40px 20px; /* Added padding for small screens */
+    padding: 40px 20px;
 }
 
-.container {
-    max-width: 600px;
+.main-container {
     width: 100%;
-    animation: fadeIn 1.5s ease-in-out;
+    max-width: 900px;
+    text-align: center;
+    animation: fadeIn 0.8s ease-out;
 }
 
-/* Logo */
+/* HEADER & LOGO */
+.header {
+    margin-bottom: 60px;
+}
+
 .logo {
-    max-width: 300px;
+    max-width: 320px;
     width: 100%;
     height: auto;
-    margin-bottom: 30px;
+    display: block;
+    margin: 0 auto 15px auto;
 }
 
-/* Main Titles */
-h1 {
-    font-size: 28px;
-    font-weight: 600;
-    margin-bottom: 10px;
-    letter-spacing: -0.5px;
-}
-
-.subtitle {
-    font-size: 16px;
-    color: #888888;
-    margin-bottom: 50px;
-}
-
-/* Section Grouping */
-.section {
-    margin-bottom: 40px;
-    padding-top: 20px;
-    border-top: 1px solid #333333; /* Subtle divider line */
-}
-
-/* Section Headings (HR & Staffing, Operations) */
-h2 {
+/* "NETWORK" Subtitle Styling */
+.network-text {
     font-size: 14px;
+    letter-spacing: 8px; /* Wide spacing for that cinematic look */
     text-transform: uppercase;
-    letter-spacing: 2px;
-    color: #666666; /* Dimmer text for labels */
-    margin-bottom: 20px;
+    color: #ffffff;
+    font-weight: 500;
+    margin-left: 8px; /* Offset slightly to visually center due to letter-spacing */
+    opacity: 0.9;
+}
+
+/* GRID LAYOUT */
+.grid-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Two Equal Columns */
+    gap: 24px;
+    align-items: start;
+}
+
+/* Mobile: Stack columns */
+@media (max-width: 768px) {
+    .grid-container {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* PANELS (Grey Bordered Boxes) */
+.panel {
+    border: 1px solid #333333; /* Subtle grey border */
+    border-radius: 4px; /* Slight rounding, keep it mostly boxy */
+    padding: 30px;
+    text-align: left;
+    height: 100%;
+    background-color: transparent; /* Keeping it clean/black */
+    transition: border-color 0.3s ease;
+}
+
+.panel:hover {
+    border-color: #555555; /* Slightly brighter on hover */
+}
+
+.panel-title {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #888888; /* Grey text for headers */
+    margin-bottom: 25px;
     font-weight: 600;
 }
 
-/* Button Group */
-.button-group {
+.panel-content {
     display: flex;
+    flex-direction: column;
     gap: 15px;
-    justify-content: center;
-    flex-wrap: wrap;
 }
 
-/* Base Button Style */
+/* BUTTONS */
 .button {
-    display: inline-block;
-    padding: 15px 30px;
+    display: block;
+    width: 100%;
+    padding: 14px 20px;
+    text-align: center;
+    text-decoration: none;
+    font-size: 15px;
+    font-weight: 500;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+/* Solid White Button (Right To Work) */
+.button-solid {
     background-color: #ffffff;
     color: #000000;
-    text-decoration: none;
-    font-weight: 600;
-    border-radius: 6px;
-    transition: all 0.2s ease;
     border: 1px solid #ffffff;
-    min-width: 200px;
 }
 
-.button:hover {
-    background-color: #cccccc;
-    border-color: #cccccc;
-    transform: translateY(-2px);
+.button-solid:hover {
+    background-color: #e0e0e0;
+    border-color: #e0e0e0;
 }
 
-/* Outline Button Style (Ghost) */
-.button-outline {
+/* Ghost Button (Operations) */
+.button-ghost {
     background-color: transparent;
     color: #ffffff;
-    border: 1px solid #333333;
+    border: 1px solid #ffffff; /* Thin white outline */
 }
 
-.button-outline:hover {
-    border-color: #ffffff;
-    background-color: transparent;
-    color: #ffffff;
+.button-ghost:hover {
+    background-color: #ffffff;
+    color: #000000;
 }
 
-/* Animation */
+/* ANIMATION */
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(20px); }
+    from { opacity: 0; transform: translateY(15px); }
     to { opacity: 1; transform: translateY(0); }
 }
