@@ -9,16 +9,17 @@ body {
     background-color: #000000;
     color: #ffffff;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    height: 100vh;
+    min-height: 100vh; /* Changed from height to min-height for scrolling */
     display: flex;
     justify-content: center;
     align-items: center;
     text-align: center;
+    padding: 40px 20px; /* Added padding for small screens */
 }
 
 .container {
     max-width: 600px;
-    padding: 20px;
+    width: 100%;
     animation: fadeIn 1.5s ease-in-out;
 }
 
@@ -27,21 +28,38 @@ body {
     max-width: 300px;
     width: 100%;
     height: auto;
-    margin-bottom: 40px;
+    margin-bottom: 30px;
 }
 
-/* Text */
+/* Main Titles */
 h1 {
-    font-size: 24px;
+    font-size: 28px;
     font-weight: 600;
     margin-bottom: 10px;
-    letter-spacing: 1px;
+    letter-spacing: -0.5px;
 }
 
-p {
+.subtitle {
     font-size: 16px;
-    color: #aaaaaa;
+    color: #888888;
+    margin-bottom: 50px;
+}
+
+/* Section Grouping */
+.section {
     margin-bottom: 40px;
+    padding-top: 20px;
+    border-top: 1px solid #333333; /* Subtle divider line */
+}
+
+/* Section Headings (HR & Staffing, Operations) */
+h2 {
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: #666666; /* Dimmer text for labels */
+    margin-bottom: 20px;
+    font-weight: 600;
 }
 
 /* Button Group */
@@ -60,28 +78,29 @@ p {
     color: #000000;
     text-decoration: none;
     font-weight: 600;
-    border-radius: 5px;
-    transition: all 0.3s ease;
+    border-radius: 6px;
+    transition: all 0.2s ease;
     border: 1px solid #ffffff;
     min-width: 200px;
 }
 
 .button:hover {
-    background-color: #000000;
-    color: #ffffff;
+    background-color: #cccccc;
+    border-color: #cccccc;
     transform: translateY(-2px);
-    box-shadow: 0 4px 15px rgba(255, 255, 255, 0.2);
 }
 
-/* Secondary Button Style (Outline) */
+/* Outline Button Style (Ghost) */
 .button-outline {
     background-color: transparent;
     color: #ffffff;
+    border: 1px solid #333333;
 }
 
 .button-outline:hover {
-    background-color: #ffffff;
-    color: #000000;
+    border-color: #ffffff;
+    background-color: transparent;
+    color: #ffffff;
 }
 
 /* Animation */
