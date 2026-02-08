@@ -1,0 +1,91 @@
+/* Basic Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: #000000;
+    color: #ffffff;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+.container {
+    max-width: 600px;
+    padding: 20px;
+    animation: fadeIn 1.5s ease-in-out;
+}
+
+/* Logo */
+.logo {
+    max-width: 300px;
+    width: 100%;
+    height: auto;
+    margin-bottom: 40px;
+}
+
+/* Text */
+h1 {
+    font-size: 24px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    letter-spacing: 1px;
+}
+
+p {
+    font-size: 16px;
+    color: #aaaaaa;
+    margin-bottom: 40px;
+}
+
+/* Button Group */
+.button-group {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+/* Base Button Style */
+.button {
+    display: inline-block;
+    padding: 15px 30px;
+    background-color: #ffffff;
+    color: #000000;
+    text-decoration: none;
+    font-weight: 600;
+    border-radius: 5px;
+    transition: all 0.3s ease;
+    border: 1px solid #ffffff;
+    min-width: 200px;
+}
+
+.button:hover {
+    background-color: #000000;
+    color: #ffffff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(255, 255, 255, 0.2);
+}
+
+/* Secondary Button Style (Outline) */
+.button-outline {
+    background-color: transparent;
+    color: #ffffff;
+}
+
+.button-outline:hover {
+    background-color: #ffffff;
+    color: #000000;
+}
+
+/* Animation */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
