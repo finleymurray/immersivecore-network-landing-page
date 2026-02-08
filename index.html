@@ -7,18 +7,47 @@
     <link rel="stylesheet" href="styles.css">
     <link rel="icon" type="image/png" href="favicon.png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>
 <body>
 
     <div class="main-container">
-        
+
         <div class="header">
             <img src="logo.png" alt="Immersive Core" class="logo">
             <div class="network-text">NETWORK</div>
         </div>
 
+        <!-- Auth bar: login form or signed-in user info -->
+        <div id="auth-bar" class="auth-bar">
+            <div id="auth-login" class="auth-login" style="display: none;">
+                <form id="login-form" class="login-form" onsubmit="handleLogin(event)">
+                    <input type="email" id="login-email" placeholder="Email" required class="auth-input">
+                    <input type="password" id="login-password" placeholder="Password" required class="auth-input">
+                    <button type="submit" class="auth-btn">Sign in</button>
+                </form>
+                <div id="login-error" class="login-error" style="display: none;"></div>
+            </div>
+            <div id="auth-user" class="auth-user" style="display: none;">
+                <span id="auth-user-email" class="auth-user-email"></span>
+                <button class="auth-btn auth-btn-logout" onclick="handleLogout()">Sign out</button>
+            </div>
+        </div>
+
+        <!-- Notifications Banner -->
+        <div id="notifications-banner" class="notifications-banner" style="display: none;">
+            <div class="notifications-header">
+                <span class="notifications-title">
+                    <span class="notifications-icon">&#9888;</span>
+                    <span id="notifications-count">0</span> item(s) need attention
+                </span>
+                <button id="notifications-toggle" class="notifications-toggle" onclick="toggleNotifications()">Show</button>
+            </div>
+            <div id="notifications-list" class="notifications-list" style="display: none;"></div>
+        </div>
+
         <div class="grid-container">
-            
+
             <div class="panel">
                 <h2 class="panel-title">People & Compliance</h2>
                 <div class="panel-content">
@@ -42,6 +71,167 @@
 
         </div>
     </div>
+
+    <script>
+        // Supabase config — same project as RTW checker
+        const SUPABASE_URL = 'https://uaclhscpseivkuzajuly.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable__Hbu8a8ApDjKP26wt-hEnw_8MAXtiX6';
+
+        const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        const severityOrder = { urgent: 0, warning: 1, info: 2 };
+        const severityLabels = { urgent: '\u{1F534}', warning: '\u{1F7E1}', info: '\u{1F535}' };
+
+        // --- Auth ---
+
+        async function checkAuth() {
+            const { data: { session } } = await sb.auth.getSession();
+            updateAuthUI(session);
+            if (session) {
+                loadNotifications();
+            }
+        }
+
+        function updateAuthUI(session) {
+            const loginEl = document.getElementById('auth-login');
+            const userEl = document.getElementById('auth-user');
+            const emailEl = document.getElementById('auth-user-email');
+
+            if (session) {
+                loginEl.style.display = 'none';
+                userEl.style.display = 'flex';
+                emailEl.textContent = session.user.email;
+            } else {
+                loginEl.style.display = 'block';
+                userEl.style.display = 'none';
+                // Hide notifications when not logged in
+                document.getElementById('notifications-banner').style.display = 'none';
+            }
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            const errorEl = document.getElementById('login-error');
+            errorEl.style.display = 'none';
+
+            const { data, error } = await sb.auth.signInWithPassword({ email, password });
+            if (error) {
+                errorEl.textContent = error.message;
+                errorEl.style.display = 'block';
+                return;
+            }
+            updateAuthUI(data.session);
+            loadNotifications();
+        }
+
+        async function handleLogout() {
+            await sb.auth.signOut();
+            updateAuthUI(null);
+        }
+
+        // Listen for auth state changes
+        sb.auth.onAuthStateChange((event, session) => {
+            updateAuthUI(session);
+            if (session) loadNotifications();
+        });
+
+        // --- Notifications ---
+
+        async function loadNotifications() {
+            try {
+                const { data: { session } } = await sb.auth.getSession();
+                if (!session) return;
+
+                const { data, error } = await sb
+                    .from('notifications')
+                    .select('*')
+                    .is('dismissed_at', null)
+                    .order('created_at', { ascending: false });
+
+                if (error) {
+                    console.error('Failed to load notifications:', error);
+                    return;
+                }
+
+                const banner = document.getElementById('notifications-banner');
+                const countEl = document.getElementById('notifications-count');
+                const listEl = document.getElementById('notifications-list');
+
+                if (!data || data.length === 0) {
+                    banner.style.display = 'none';
+                    return;
+                }
+
+                // Sort by severity
+                data.sort((a, b) => (severityOrder[a.severity] || 2) - (severityOrder[b.severity] || 2));
+
+                countEl.textContent = data.length;
+                banner.style.display = 'block';
+
+                const mostSevere = data[0].severity;
+                banner.className = 'notifications-banner severity-' + mostSevere;
+
+                listEl.innerHTML = data.map(n => `
+                    <div class="notification-item severity-${esc(n.severity)}">
+                        <div class="notification-item-header">
+                            <span class="notification-severity">${severityLabels[n.severity] || ''}</span>
+                            <span class="notification-title">${esc(n.title)}</span>
+                            <span class="notification-source">${esc(n.source_app)}</span>
+                        </div>
+                        <div class="notification-message">${esc(n.message)}</div>
+                        <div class="notification-actions">
+                            ${n.action_url ? `<a href="${esc(n.action_url)}" class="notification-link" target="_blank">View &rarr;</a>` : ''}
+                            <button class="notification-dismiss" onclick="dismissNotification('${n.id}', this)">Dismiss</button>
+                        </div>
+                    </div>
+                `).join('');
+
+            } catch (err) {
+                console.error('Notification load error:', err);
+            }
+        }
+
+        function esc(str) {
+            if (!str) return '';
+            const d = document.createElement('div');
+            d.textContent = str;
+            return d.innerHTML;
+        }
+
+        function toggleNotifications() {
+            const list = document.getElementById('notifications-list');
+            const btn = document.getElementById('notifications-toggle');
+            if (list.style.display === 'none') {
+                list.style.display = 'block';
+                btn.textContent = 'Hide';
+            } else {
+                list.style.display = 'none';
+                btn.textContent = 'Show';
+            }
+        }
+
+        async function dismissNotification(id, btn) {
+            btn.disabled = true;
+            btn.textContent = '...';
+            const { error } = await sb
+                .from('notifications')
+                .update({ dismissed_at: new Date().toISOString() })
+                .eq('id', id);
+
+            if (error) {
+                console.error('Failed to dismiss:', error);
+                btn.disabled = false;
+                btn.textContent = 'Dismiss';
+                return;
+            }
+            loadNotifications();
+        }
+
+        // Initialise
+        checkAuth();
+    </script>
 
 </body>
 </html>
