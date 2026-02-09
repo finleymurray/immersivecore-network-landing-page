@@ -46,7 +46,7 @@
             <div id="notifications-list" class="notifications-list" style="display: none;"></div>
         </div>
 
-        <div class="grid-container">
+        <div class="grid-container" id="app-panels" style="display: none;">
 
             <div class="panel">
                 <h2 class="panel-title">People & Compliance</h2>
@@ -99,16 +99,18 @@
             const loginEl = document.getElementById('auth-login');
             const userEl = document.getElementById('auth-user');
             const emailEl = document.getElementById('auth-user-email');
+            const panelsEl = document.getElementById('app-panels');
 
             if (session) {
                 loginEl.style.display = 'none';
                 userEl.style.display = 'flex';
                 emailEl.textContent = session.user.email;
+                if (panelsEl) panelsEl.style.display = '';
             } else {
                 loginEl.style.display = 'block';
                 userEl.style.display = 'none';
-                // Hide notifications when not logged in
                 document.getElementById('notifications-banner').style.display = 'none';
+                if (panelsEl) panelsEl.style.display = 'none';
             }
         }
 
