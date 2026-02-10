@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy - Immersive Core Network</title>
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #000;
+            color: #ccc;
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            padding: 60px 20px;
+            line-height: 1.7;
+        }
+        .container { max-width: 640px; margin: 0 auto; }
+        a.back { color: #888; text-decoration: none; font-size: 14px; display: inline-block; margin-bottom: 32px; }
+        a.back:hover { color: #fff; }
+        h1 { color: #fff; font-size: 28px; margin-bottom: 8px; }
+        .last-updated { font-size: 13px; color: #666; margin-bottom: 28px; }
+        h2 { color: #fff; font-size: 18px; margin-top: 28px; margin-bottom: 10px; }
+        h3 { color: #ddd; font-size: 15px; margin-top: 18px; margin-bottom: 8px; }
+        p, li { font-size: 15px; margin-bottom: 14px; }
+        ul { padding-left: 20px; margin-bottom: 14px; }
+        li { margin-bottom: 6px; }
+        a { color: #fff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back">&larr; Back to home</a>
+        <h1>Privacy Policy</h1>
+        <p class="last-updated">Last updated: February 2026</p>
+
+        <h2>1. Introduction</h2>
+        <p>Immersive Core Ltd ("we", "us", "our") operates the ImmersiveCore Network, which includes the People portal, Right to Work Checker, and Training &amp; Compliance portal. This policy explains what personal data we collect, why we collect it, how we store it, and your rights.</p>
+
+        <h2>2. Data We Collect</h2>
+
+        <h3>Right to Work Checker</h3>
+        <ul>
+            <li>Full name, date of birth, nationality</li>
+            <li>Document type and reference number (e.g. passport number, BRP number)</li>
+            <li>Document expiry date</li>
+            <li>Uploaded document images (photo page, visa page, etc.)</li>
+            <li>Share code (where applicable)</li>
+            <li>Check outcome, date of check, name of checker</li>
+        </ul>
+        <p>This data is collected and retained to comply with the Immigration, Asylum and Nationality Act 2006 and Home Office Right to Work guidance.</p>
+
+        <h3>People Portal</h3>
+        <ul>
+            <li>Full name, email address</li>
+            <li>Emergency contact name and phone number</li>
+            <li>Dietary requirements, medical/accessibility notes</li>
+            <li>DBS certificate number and issue date (where applicable)</li>
+            <li>Uniform and equipment sizes</li>
+        </ul>
+        <p>This data is collected for the purpose of onboarding staff, managing day-to-day welfare, and meeting our duty of care obligations.</p>
+
+        <h3>Training &amp; Compliance Portal</h3>
+        <ul>
+            <li>Full name, email address</li>
+            <li>Training session attendance records (module, date, trainer, status)</li>
+            <li>Assessment results (score, pass/fail, assessor notes)</li>
+        </ul>
+        <p>This data is collected to ensure staff are trained and assessed before operating attractions or carrying out safety-critical tasks.</p>
+
+        <h2>3. How Data Is Stored</h2>
+        <p>All data is stored in a Supabase-hosted PostgreSQL database. Uploaded document images are stored in Supabase Storage. Both are hosted in the EU (AWS eu-west-2, London). Access is restricted to authenticated users with the appropriate role (manager).</p>
+
+        <h2>4. Data Retention</h2>
+        <ul>
+            <li><strong>Right to Work records:</strong> Retained for 2 years after employment ends, as required by Home Office guidance.</li>
+            <li><strong>People &amp; Training records:</strong> Retained for the duration of employment plus a reasonable period (typically 6 months) for administrative purposes, unless a longer retention period is required by law.</li>
+        </ul>
+        <p>When records are deleted, associated document images are also removed from storage.</p>
+
+        <h2>5. Your Rights</h2>
+        <p>Under the UK General Data Protection Regulation (UK GDPR), you have the right to:</p>
+        <ul>
+            <li>Request a copy of the personal data we hold about you (Subject Access Request)</li>
+            <li>Request correction of inaccurate data</li>
+            <li>Request deletion of your data (subject to our legal retention obligations)</li>
+            <li>Object to processing or request restriction of processing</li>
+        </ul>
+        <p>To exercise any of these rights, please contact your line manager or email <strong>dpo@immersivecore.network</strong>.</p>
+
+        <h2>6. Contact</h2>
+        <p>If you have any questions about this policy or how your data is handled, please contact:</p>
+        <p><strong>Data Protection Contact</strong><br>
+        Immersive Core Ltd<br>
+        Email: <a href="mailto:dpo@immersivecore.network">dpo@immersivecore.network</a></p>
+    </div>
+</body>
+</html>
