@@ -91,14 +91,55 @@
         const severityOrder = { urgent: 0, warning: 1, info: 2 };
         const severityLabels = { urgent: '\u{1F534}', warning: '\u{1F7E1}', info: '\u{1F535}' };
 
+        // --- Shared SSO Cookie ---
+        const IC_COOKIE_NAME = 'ic_rt';
+        const IC_COOKIE_DOMAIN = '.immersivecore.network';
+        const IC_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
+
+        function setSharedRefreshToken(rt) {
+            if (!rt) return;
+            document.cookie = IC_COOKIE_NAME + '=' + encodeURIComponent(rt) +
+                '; domain=' + IC_COOKIE_DOMAIN +
+                '; path=/; max-age=' + IC_COOKIE_MAX_AGE +
+                '; secure; samesite=lax';
+        }
+
+        function getSharedRefreshToken() {
+            const m = document.cookie.split('; ').find(function(r) { return r.startsWith(IC_COOKIE_NAME + '='); });
+            return m ? decodeURIComponent(m.split('=')[1]) : null;
+        }
+
+        function clearSharedRefreshToken() {
+            document.cookie = IC_COOKIE_NAME + '=; domain=' + IC_COOKIE_DOMAIN +
+                '; path=/; max-age=0; secure; samesite=lax';
+        }
+
         // --- Auth ---
 
         async function checkAuth() {
             const { data: { session } } = await sb.auth.getSession();
-            updateAuthUI(session);
             if (session) {
+                setSharedRefreshToken(session.refresh_token);
+                updateAuthUI(session);
                 loadNotifications();
+                return;
             }
+            // Try SSO bootstrap from shared cookie
+            const sharedRT = getSharedRefreshToken();
+            if (sharedRT) {
+                try {
+                    const { data, error } = await sb.auth.refreshSession({ refresh_token: sharedRT });
+                    if (!error && data.session) {
+                        updateAuthUI(data.session);
+                        loadNotifications();
+                        return;
+                    }
+                } catch (e) {
+                    console.error('SSO bootstrap failed:', e);
+                }
+                clearSharedRefreshToken();
+            }
+            updateAuthUI(null);
         }
 
         function updateAuthUI(session) {
@@ -133,17 +174,24 @@
                 errorEl.style.display = 'block';
                 return;
             }
+            setSharedRefreshToken(data.session.refresh_token);
             updateAuthUI(data.session);
             loadNotifications();
         }
 
         async function handleLogout() {
+            clearSharedRefreshToken();
             await sb.auth.signOut();
             updateAuthUI(null);
         }
 
         // Listen for auth state changes
         sb.auth.onAuthStateChange((event, session) => {
+            if (event === 'SIGNED_OUT') {
+                clearSharedRefreshToken();
+            } else if (session && session.refresh_token) {
+                setSharedRefreshToken(session.refresh_token);
+            }
             updateAuthUI(session);
             if (session) loadNotifications();
         });
@@ -242,6 +290,22 @@
 
         // Initialise
         checkAuth();
+    </script>
+
+    <!-- Cookie disclosure -->
+    <div id="cookie-notice" style="display:none; position:fixed; bottom:0; left:0; right:0; background:#111; border-top:1px solid #333; padding:12px 20px; font-family:'Inter',sans-serif; font-size:13px; color:#aaa; z-index:9999; text-align:center;">
+        This site uses a cookie for single sign-on across ImmersiveCore apps.
+        <a href="https://immersivecore.network/cookies.html" style="color:#fff; margin-left:6px;">Learn more</a>
+        <button onclick="dismissCookieNotice()" style="margin-left:12px; background:none; border:1px solid #555; color:#fff; padding:4px 12px; border-radius:4px; cursor:pointer; font-size:12px;">OK</button>
+    </div>
+    <script>
+        function dismissCookieNotice() {
+            document.getElementById('cookie-notice').style.display = 'none';
+            document.cookie = 'ic_cookie_notice=1; domain=.immersivecore.network; path=/; max-age=' + (60*60*24*365) + '; secure; samesite=lax';
+        }
+        if (!document.cookie.split('; ').find(function(r) { return r.startsWith('ic_cookie_notice='); })) {
+            document.getElementById('cookie-notice').style.display = '';
+        }
     </script>
 
 </body>

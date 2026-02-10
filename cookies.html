@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cookie Policy - Immersive Core Network</title>
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #000;
+            color: #ccc;
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            padding: 60px 20px;
+            line-height: 1.7;
+        }
+        .container { max-width: 640px; margin: 0 auto; }
+        a.back { color: #888; text-decoration: none; font-size: 14px; display: inline-block; margin-bottom: 32px; }
+        a.back:hover { color: #fff; }
+        h1 { color: #fff; font-size: 28px; margin-bottom: 24px; }
+        h2 { color: #fff; font-size: 18px; margin-top: 28px; margin-bottom: 10px; }
+        p { font-size: 15px; margin-bottom: 14px; }
+        table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+        th, td { text-align: left; padding: 10px 12px; border: 1px solid #333; }
+        th { background: #111; color: #fff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back">&larr; Back to home</a>
+        <h1>Cookie Policy</h1>
+        <p>The ImmersiveCore Network uses a small number of cookies that are strictly necessary for the service to function. We do not use cookies for tracking, analytics, or advertising.</p>
+
+        <h2>Cookies we use</h2>
+        <table>
+            <tr><th>Name</th><th>Purpose</th><th>Duration</th></tr>
+            <tr><td>ic_rt</td><td>Single sign-on — stores an authentication refresh token so you stay signed in across ImmersiveCore apps (People, Right to Work, Training)</td><td>7 days</td></tr>
+            <tr><td>ic_cookie_notice</td><td>Remembers that you have seen this cookie notice</td><td>1 year</td></tr>
+        </table>
+
+        <h2>Browser storage</h2>
+        <p>Each app also stores a session token in your browser's local storage (under the key <code style="background:#111;padding:2px 6px;border-radius:3px;">sb-uaclhscpseivkuzajuly-auth-token</code>). This is managed by the Supabase authentication library and is required for the app to function.</p>
+
+        <h2>Third-party cookies</h2>
+        <p>We do not set any third-party cookies. The authentication service (Supabase) operates under our project domain and does not set tracking cookies.</p>
+    </div>
+</body>
+</html>
