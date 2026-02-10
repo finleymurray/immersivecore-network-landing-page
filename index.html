@@ -127,13 +127,21 @@
                 loadNotifications();
                 return;
             }
-            // Try SSO bootstrap from shared cookie
+            // Show login form immediately while SSO bootstrap runs
+            updateAuthUI(null);
+            // Try SSO bootstrap from shared cookie in background
             const sharedRT = getSharedRefreshToken();
             if (sharedRT) {
                 try {
-                    const { data, error } = await sb.auth.refreshSession({ refresh_token: sharedRT });
-                    if (!error && data.session) {
-                        updateAuthUI(data.session);
+                    var timeout = new Promise(function(resolve) {
+                        setTimeout(function() { resolve({ data: {}, error: { message: 'SSO timeout' } }); }, 4000);
+                    });
+                    var result = await Promise.race([
+                        sb.auth.refreshSession({ refresh_token: sharedRT }),
+                        timeout
+                    ]);
+                    if (!result.error && result.data.session) {
+                        updateAuthUI(result.data.session);
                         loadNotifications();
                         return;
                     }
@@ -142,7 +150,6 @@
                 }
                 clearSharedRefreshToken();
             }
-            updateAuthUI(null);
         }
 
         function updateAuthUI(session) {
