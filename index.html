@@ -10,7 +10,8 @@
     <link rel="stylesheet" href="styles.css">
     <link rel="icon" type="image/png" href="favicon.png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://uaclhscpseivkuzajuly.supabase.co; img-src 'self' data:; frame-ancestors 'none';">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.95.3/dist/umd/supabase.min.js" integrity="sha384-aRAaCbKYByQpx0fjPuC0PQ9P9moWMEsHXP9tyzP7tbyD5fPK6oTp+THsxdWiq02L" crossorigin="anonymous"></script>
 </head>
 <body>
 
@@ -183,8 +184,9 @@
 
             const { data, error } = await sb.auth.signInWithPassword({ email, password });
             if (error) {
-                errorEl.textContent = error.message;
+                errorEl.textContent = 'Invalid email or password.';
                 errorEl.style.display = 'block';
+                try { sb.rpc('log_failed_login', { attempted_email: email, error_msg: error.message }); } catch(_) {}
                 return;
             }
             setSharedRefreshToken(data.session.refresh_token);
@@ -254,7 +256,7 @@
                         </div>
                         <div class="notification-message">${esc(n.message)}</div>
                         <div class="notification-actions">
-                            ${n.action_url ? `<a href="${esc(n.action_url)}" class="notification-link" target="_blank">View &rarr;</a>` : ''}
+                            ${n.action_url && n.action_url.startsWith('https://') ? `<a href="${esc(n.action_url)}" class="notification-link" target="_blank">View &rarr;</a>` : ''}
                             <button class="notification-dismiss" onclick="dismissNotification('${n.id}', this)">Dismiss</button>
                         </div>
                     </div>
