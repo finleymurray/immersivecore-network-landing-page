@@ -41,6 +41,21 @@
             </div>
         </div>
 
+        <!-- MFA Challenge (shown after password login when MFA is enrolled) -->
+        <div id="mfa-challenge" style="display: none;">
+            <div class="panel" style="max-width: 400px; margin: 0 auto;">
+                <h2 class="panel-title">Verification Required</h2>
+                <p style="font-size: 13px; color: #aaa; margin-bottom: 20px;">Open your authenticator app and enter the 6-digit code.</p>
+                <form id="mfa-form" onsubmit="handleMFAVerify(event)">
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="mfa-code" placeholder="000000" required maxlength="6" pattern="[0-9]{6}" inputmode="numeric" autocomplete="one-time-code" class="auth-input" style="flex: 1; text-align: center; font-size: 20px; letter-spacing: 8px; padding: 12px;">
+                        <button type="submit" class="auth-btn" id="mfa-btn">Verify</button>
+                    </div>
+                </form>
+                <div id="mfa-error" class="login-error" style="display: none;"></div>
+            </div>
+        </div>
+
         <!-- Notifications Banner -->
         <div id="notifications-banner" class="notifications-banner" style="display: none;">
             <div class="notifications-header">
@@ -88,6 +103,13 @@
                 </div>
             </div>
 
+            <div class="panel" id="security-panel" style="grid-column: 1 / -1;">
+                <h2 class="panel-title">Security</h2>
+                <div id="mfa-status" class="panel-content">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+
         </div>
     </div>
 
@@ -124,20 +146,178 @@
                 '; path=/; max-age=0; secure; samesite=lax';
         }
 
+        // --- MFA ---
+
+        var pendingMFAFactorId = null;
+
+        async function checkMFARequired() {
+            var result = await sb.auth.mfa.getAuthenticatorAssuranceLevel();
+            if (result.data.currentLevel === 'aal1' && result.data.nextLevel === 'aal2') {
+                var factors = await sb.auth.mfa.listFactors();
+                var totp = factors.data.totp[0];
+                return { required: true, factorId: totp.id };
+            }
+            return { required: false, factorId: null };
+        }
+
+        function showMFAChallenge(factorId) {
+            pendingMFAFactorId = factorId;
+            document.getElementById('auth-login').style.display = 'none';
+            document.getElementById('auth-user').style.display = 'none';
+            document.getElementById('app-panels').style.display = 'none';
+            document.getElementById('mfa-challenge').style.display = 'block';
+            document.getElementById('mfa-code').value = '';
+            document.getElementById('mfa-error').style.display = 'none';
+            document.getElementById('mfa-code').focus();
+        }
+
+        async function handleMFAVerify(e) {
+            e.preventDefault();
+            var code = document.getElementById('mfa-code').value.trim();
+            var errorEl = document.getElementById('mfa-error');
+            var btn = document.getElementById('mfa-btn');
+            errorEl.style.display = 'none';
+            btn.disabled = true;
+            btn.textContent = 'Verifying\u2026';
+
+            var result = await sb.auth.mfa.challengeAndVerify({
+                factorId: pendingMFAFactorId,
+                code: code
+            });
+
+            if (result.error) {
+                errorEl.textContent = 'Invalid code. Try again.';
+                errorEl.style.display = 'block';
+                btn.disabled = false;
+                btn.textContent = 'Verify';
+                document.getElementById('mfa-code').value = '';
+                document.getElementById('mfa-code').focus();
+                return;
+            }
+
+            // MFA verified — update SSO cookie with new session and show panels
+            pendingMFAFactorId = null;
+            document.getElementById('mfa-challenge').style.display = 'none';
+            var session = (await sb.auth.getSession()).data.session;
+            if (session) setSharedRefreshToken(session.refresh_token);
+            showFullUI(session);
+            btn.disabled = false;
+            btn.textContent = 'Verify';
+        }
+
+        async function loadMFAStatus() {
+            var statusEl = document.getElementById('mfa-status');
+            var factors = await sb.auth.mfa.listFactors();
+            var activeTOTP = factors.data.totp.filter(function(f) { return f.status === 'verified'; });
+
+            if (activeTOTP.length > 0) {
+                statusEl.innerHTML =
+                    '<div style="display:flex;align-items:center;justify-content:space-between;">' +
+                        '<span style="font-size:14px;color:#aaa;">Two-factor authentication is <strong style="color:#22C55E;">enabled</strong></span>' +
+                        '<button class="auth-btn auth-btn-logout" onclick="removeMFA(\'' + activeTOTP[0].id + '\')">Remove</button>' +
+                    '</div>';
+            } else {
+                statusEl.innerHTML =
+                    '<div style="display:flex;align-items:center;justify-content:space-between;">' +
+                        '<span style="font-size:14px;color:#aaa;">Two-factor authentication is <strong style="color:#888;">not enabled</strong></span>' +
+                        '<button class="auth-btn" onclick="startMFAEnroll()">Set up</button>' +
+                    '</div>' +
+                    '<div id="mfa-enroll-area"></div>';
+            }
+        }
+
+        async function startMFAEnroll() {
+            var area = document.getElementById('mfa-enroll-area');
+            area.innerHTML = '<p style="font-size:13px;color:#888;margin-top:16px;">Loading\u2026</p>';
+
+            // Clean up any stale unverified factors
+            var factors = await sb.auth.mfa.listFactors();
+            var unverified = factors.data.all.filter(function(f) { return f.status === 'unverified'; });
+            for (var i = 0; i < unverified.length; i++) {
+                await sb.auth.mfa.unenroll({ factorId: unverified[i].id });
+            }
+
+            var result = await sb.auth.mfa.enroll({ factorType: 'totp', friendlyName: 'Authenticator' });
+            if (result.error) {
+                area.innerHTML = '<p style="font-size:13px;color:#dc3545;margin-top:16px;">Failed to start setup: ' + esc(result.error.message) + '</p>';
+                return;
+            }
+
+            var factorId = result.data.id;
+            var qrCode = result.data.totp.qr_code;
+            var secret = result.data.totp.secret;
+
+            area.innerHTML =
+                '<div style="margin-top:16px;padding:20px;border:1px solid #333;border-radius:4px;">' +
+                    '<p style="font-size:13px;color:#aaa;margin-bottom:16px;">Scan this QR code with Google Authenticator or a similar app:</p>' +
+                    '<div style="text-align:center;margin-bottom:16px;background:#fff;display:inline-block;padding:12px;border-radius:4px;"><img src="' + qrCode + '" width="200" height="200"></div>' +
+                    '<p style="font-size:11px;color:#666;margin-bottom:16px;">Or enter manually: <code style="color:#fff;background:#222;padding:2px 6px;border-radius:3px;font-size:12px;">' + esc(secret) + '</code></p>' +
+                    '<form onsubmit="verifyMFAEnroll(event, \'' + factorId + '\')">' +
+                        '<div style="display:flex;gap:10px;">' +
+                            '<input type="text" id="mfa-enroll-code" placeholder="000000" required maxlength="6" pattern="[0-9]{6}" inputmode="numeric" class="auth-input" style="flex:1;text-align:center;font-size:18px;letter-spacing:6px;padding:10px;">' +
+                            '<button type="submit" class="auth-btn" id="mfa-enroll-btn">Confirm</button>' +
+                        '</div>' +
+                    '</form>' +
+                    '<div id="mfa-enroll-error" class="login-error" style="display:none;"></div>' +
+                '</div>';
+            document.getElementById('mfa-enroll-code').focus();
+        }
+
+        async function verifyMFAEnroll(e, factorId) {
+            e.preventDefault();
+            var code = document.getElementById('mfa-enroll-code').value.trim();
+            var errorEl = document.getElementById('mfa-enroll-error');
+            var btn = document.getElementById('mfa-enroll-btn');
+            errorEl.style.display = 'none';
+            btn.disabled = true;
+            btn.textContent = 'Confirming\u2026';
+
+            var result = await sb.auth.mfa.challengeAndVerify({ factorId: factorId, code: code });
+            if (result.error) {
+                errorEl.textContent = 'Invalid code. Try again.';
+                errorEl.style.display = 'block';
+                btn.disabled = false;
+                btn.textContent = 'Confirm';
+                document.getElementById('mfa-enroll-code').value = '';
+                document.getElementById('mfa-enroll-code').focus();
+                return;
+            }
+
+            // Enrollment verified — refresh SSO cookie and reload status
+            var session = (await sb.auth.getSession()).data.session;
+            if (session) setSharedRefreshToken(session.refresh_token);
+            loadMFAStatus();
+        }
+
+        async function removeMFA(factorId) {
+            if (!confirm('Remove two-factor authentication?')) return;
+            var result = await sb.auth.mfa.unenroll({ factorId: factorId });
+            if (result.error) {
+                alert('Failed to remove: ' + result.error.message);
+                return;
+            }
+            loadMFAStatus();
+        }
+
         // --- Auth ---
 
         async function checkAuth() {
-            const { data: { session } } = await sb.auth.getSession();
+            var session = (await sb.auth.getSession()).data.session;
             if (session) {
                 setSharedRefreshToken(session.refresh_token);
-                updateAuthUI(session);
-                loadNotifications();
+                // Check if MFA verification is needed
+                var mfa = await checkMFARequired();
+                if (mfa.required) {
+                    showMFAChallenge(mfa.factorId);
+                    return;
+                }
+                showFullUI(session);
                 return;
             }
             // Show login form immediately while SSO bootstrap runs
             updateAuthUI(null);
             // Try SSO bootstrap from shared cookie in background
-            const sharedRT = getSharedRefreshToken();
+            var sharedRT = getSharedRefreshToken();
             if (sharedRT) {
                 try {
                     var timeout = new Promise(function(resolve) {
@@ -148,8 +328,12 @@
                         timeout
                     ]);
                     if (!result.error && result.data.session) {
-                        updateAuthUI(result.data.session);
-                        loadNotifications();
+                        var mfa = await checkMFARequired();
+                        if (mfa.required) {
+                            showMFAChallenge(mfa.factorId);
+                            return;
+                        }
+                        showFullUI(result.data.session);
                         return;
                     }
                 } catch (e) {
@@ -159,11 +343,18 @@
             }
         }
 
+        function showFullUI(session) {
+            document.getElementById('mfa-challenge').style.display = 'none';
+            updateAuthUI(session);
+            loadNotifications();
+            loadMFAStatus();
+        }
+
         function updateAuthUI(session) {
-            const loginEl = document.getElementById('auth-login');
-            const userEl = document.getElementById('auth-user');
-            const emailEl = document.getElementById('auth-user-email');
-            const panelsEl = document.getElementById('app-panels');
+            var loginEl = document.getElementById('auth-login');
+            var userEl = document.getElementById('auth-user');
+            var emailEl = document.getElementById('auth-user-email');
+            var panelsEl = document.getElementById('app-panels');
 
             if (session) {
                 loginEl.style.display = 'none';
@@ -174,44 +365,51 @@
                 loginEl.style.display = 'block';
                 userEl.style.display = 'none';
                 document.getElementById('notifications-banner').style.display = 'none';
+                document.getElementById('mfa-challenge').style.display = 'none';
                 if (panelsEl) panelsEl.style.display = 'none';
             }
         }
 
         async function handleLogin(e) {
             e.preventDefault();
-            const email = document.getElementById('login-email').value;
-            const password = document.getElementById('login-password').value;
-            const errorEl = document.getElementById('login-error');
+            var email = document.getElementById('login-email').value;
+            var password = document.getElementById('login-password').value;
+            var errorEl = document.getElementById('login-error');
             errorEl.style.display = 'none';
 
-            const { data, error } = await sb.auth.signInWithPassword({ email, password });
-            if (error) {
+            var result = await sb.auth.signInWithPassword({ email: email, password: password });
+            if (result.error) {
                 errorEl.textContent = 'Invalid email or password.';
                 errorEl.style.display = 'block';
-                try { sb.rpc('log_failed_login', { attempted_email: email, error_msg: error.message }); } catch(_) {}
+                try { sb.rpc('log_failed_login', { attempted_email: email, error_msg: result.error.message }); } catch(_) {}
                 return;
             }
-            setSharedRefreshToken(data.session.refresh_token);
-            updateAuthUI(data.session);
-            loadNotifications();
+            setSharedRefreshToken(result.data.session.refresh_token);
+
+            // Check if MFA is needed
+            var mfa = await checkMFARequired();
+            if (mfa.required) {
+                showMFAChallenge(mfa.factorId);
+                return;
+            }
+            showFullUI(result.data.session);
         }
 
         async function handleLogout() {
+            pendingMFAFactorId = null;
             clearSharedRefreshToken();
             await sb.auth.signOut();
             updateAuthUI(null);
         }
 
         // Listen for auth state changes
-        sb.auth.onAuthStateChange((event, session) => {
+        sb.auth.onAuthStateChange(function(event, session) {
             if (event === 'SIGNED_OUT') {
                 clearSharedRefreshToken();
+                updateAuthUI(null);
             } else if (session && session.refresh_token) {
                 setSharedRefreshToken(session.refresh_token);
             }
-            updateAuthUI(session);
-            if (session) loadNotifications();
         });
 
         // --- Notifications ---
